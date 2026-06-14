@@ -14,7 +14,7 @@ public class Seat {
     private String label;
     private SeatType type;
     private double price;
-    private boolean available = true;
+    private SeatState state = SeatState.AVAILABLE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "show_id")

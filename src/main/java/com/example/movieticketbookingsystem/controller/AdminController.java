@@ -3,6 +3,7 @@ package com.example.movieticketbookingsystem.controller;
 import com.example.movieticketbookingsystem.dto.Dtos;
 import com.example.movieticketbookingsystem.model.City;
 import com.example.movieticketbookingsystem.model.Seat;
+import com.example.movieticketbookingsystem.model.SeatState;
 import com.example.movieticketbookingsystem.model.Show;
 import com.example.movieticketbookingsystem.service.CityService;
 import com.example.movieticketbookingsystem.service.ShowService;
@@ -46,7 +47,7 @@ public class AdminController {
             seat.setLabel(dto.getLabel());
             seat.setType(dto.getType());
             seat.setPrice(dto.getPrice());
-            seat.setAvailable(true);
+            seat.setState(SeatState.AVAILABLE);
             return seat;
         }).toList();
         return ResponseEntity.ok(showService.createShow(request.getTheaterId(), show, seats));

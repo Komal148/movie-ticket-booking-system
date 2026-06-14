@@ -1,6 +1,7 @@
 package com.example.movieticketbookingsystem.service;
 
 import com.example.movieticketbookingsystem.model.*;
+import com.example.movieticketbookingsystem.config.AppProperties;
 import com.example.movieticketbookingsystem.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -18,15 +19,18 @@ public class BookingService {
     private final SeatRepository seatRepository;
     private final BookingRepository bookingRepository;
     private final HoldRepository holdRepository;
+    private final AppProperties appProperties;
 
     public BookingService(ShowRepository showRepository,
                           SeatRepository seatRepository,
                           BookingRepository bookingRepository,
-                          HoldRepository holdRepository) {
+                          HoldRepository holdRepository,
+                          AppProperties appProperties) {
         this.showRepository = showRepository;
         this.seatRepository = seatRepository;
         this.bookingRepository = bookingRepository;
         this.holdRepository = holdRepository;
+        this.appProperties = appProperties;
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
@@ -39,12 +43,12 @@ public class BookingService {
             throw new IllegalArgumentException("One or more seats not found");
         }
 
-        var unavailable = seats.stream().filter(seat -> !seat.isAvailable()).collect(Collectors.toList());
+        var unavailable = seats.stream().filter(seat -> seat.getState() != SeatState.AVAILABLE).collect(Collectors.toList());
         if (!unavailable.isEmpty()) {
             throw new IllegalStateException("Seats are not available");
         }
 
-        seats.forEach(seat -> seat.setAvailable(false));
+        seats.forEach(seat -> seat.setState(SeatState.BOOKED));
         seatRepository.saveAll(seats);
 
         var booking = new Booking();
@@ -70,13 +74,13 @@ public class BookingService {
         }
 
         booking.setCancelled(true);
-        booking.getSeats().forEach(seat -> seat.setAvailable(true));
+        booking.getSeats().forEach(seat -> seat.setState(SeatState.AVAILABLE));
         seatRepository.saveAll(booking.getSeats());
 
         var refund = new Refund();
         refund.setBooking(booking);
         refund.setRefundTime(LocalDateTime.now());
-        refund.setAmount(booking.getTotalPrice() * 0.8);
+        refund.setAmount(booking.getTotalPrice() * appProperties.getRefundDefaultPercent() / 100.0);
         refund.setReason("Cancellation refund");
         booking.getRefunds().add(refund);
 
@@ -84,7 +88,7 @@ public class BookingService {
     }
 
     @Transactional
-    public Hold createHold(String username, Long showId, List<Long> seatIds, int holdMinutes) {
+    public Hold createHold(String username, Long showId, List<Long> seatIds) {
         var show = showRepository.findById(showId)
                 .orElseThrow(() -> new IllegalArgumentException("Show not found"));
 
@@ -93,19 +97,19 @@ public class BookingService {
             throw new IllegalArgumentException("One or more seats not found");
         }
 
-        var unavailable = seats.stream().filter(seat -> !seat.isAvailable()).collect(Collectors.toList());
+        var unavailable = seats.stream().filter(seat -> seat.getState() != SeatState.AVAILABLE).collect(Collectors.toList());
         if (!unavailable.isEmpty()) {
             throw new IllegalStateException("Seats are not available for hold");
         }
 
-        seats.forEach(seat -> seat.setAvailable(false));
+        seats.forEach(seat -> seat.setState(SeatState.HELD));
         seatRepository.saveAll(seats);
 
         var hold = new Hold();
         hold.setCustomerUsername(username);
         hold.setShow(show);
         hold.setSeats(seats);
-        hold.setExpiry(LocalDateTime.now().plusMinutes(holdMinutes));
+        hold.setExpiry(LocalDateTime.now().plusMinutes(appProperties.getHoldDurationMinutes()));
         hold.setActive(true);
 
         return holdRepository.save(hold);
@@ -126,7 +130,7 @@ public class BookingService {
         var expiredHolds = holdRepository.findByActiveTrueAndExpiryBefore(LocalDateTime.now());
         expiredHolds.forEach(hold -> {
             hold.setActive(false);
-            hold.getSeats().forEach(seat -> seat.setAvailable(true));
+            hold.getSeats().forEach(seat -> seat.setState(SeatState.AVAILABLE));
             seatRepository.saveAll(hold.getSeats());
             holdRepository.save(hold);
         });

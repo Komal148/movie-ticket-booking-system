@@ -9,8 +9,8 @@
     <name>movie-ticket-booking-system</name>
     <description>Spring Boot movie ticket booking system scaffold</description>
     <properties>
-        <java.version>17</java.version>
-        <spring.boot.version>3.2.14</spring.boot.version>
+        <java.version>21</java.version>
+        <spring.boot.version>3.2.12</spring.boot.version>
     </properties>
 
     <dependencyManagement>
@@ -65,6 +65,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring.boot.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -40,7 +40,7 @@ public class CustomerController {
     @PostMapping("/hold")
     public ResponseEntity<Hold> holdSeats(@AuthenticationPrincipal UserDetails user,
                                           @Valid @RequestBody Dtos.HoldRequest request) {
-        return ResponseEntity.ok(bookingService.createHold(user.getUsername(), request.getShowId(), request.getSeatIds(), 15));
+        return ResponseEntity.ok(bookingService.createHold(user.getUsername(), request.getShowId(), request.getSeatIds()));
     }
 
     @PostMapping("/book")

@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface HoldRepository extends JpaRepository<Hold, Long> {
     List<Hold> findByActiveTrueAndExpiryBefore(LocalDateTime now);
+    List<Hold> findByActiveTrueAndCustomerUsernameAndShowId(String customerUsername, Long showId);
 }

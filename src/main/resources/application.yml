@@ -15,5 +15,4 @@ server:
   port: 8080
 app:
   hold-duration-minutes: 15
-  refund-policy:
-    default-percent: 80
+  refund-default-percent: 80.0
